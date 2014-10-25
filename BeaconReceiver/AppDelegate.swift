@@ -8,15 +8,55 @@
 
 import UIKit
 import CoreData
+import CoreLocation
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate {
 
     var window: UIWindow?
-
+    let proximityUUID = NSUUID(UUIDString:"00000000-8414-1001-B000-001C4DFB787A")
+    var region  = CLBeaconRegion()
+    var manager = CLLocationManager()
+    var lastDate : NSDate?
+    var html = NSString()
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
+        
+        application.registerUserNotificationSettings(UIUserNotificationSettings(forTypes: UIUserNotificationType.Sound | UIUserNotificationType.Alert | UIUserNotificationType.Badge, categories: nil))
+        
+
+        region = CLBeaconRegion(proximityUUID: proximityUUID, major: 1, minor: 1, identifier: "jp.co.tzapp.BeaconReceiver")
+        region.notifyOnEntry = true
+        region.notifyOnExit = false
+        //TODO なにこれ？
+        region.notifyEntryStateOnDisplay = true
+        
+        
+        manager.delegate = self;
+        switch CLLocationManager.authorizationStatus() {
+        case .Authorized, .AuthorizedWhenInUse:
+            //iBeaconによる領域観測を開始する
+            println("観測開始")
+            manager.startMonitoringForRegion(self.region)
+        case .NotDetermined:
+            println("許可承認")
+            //デバイスに許可を促す
+            if(self.manager.respondsToSelector("requestAlwaysAuthorization")){
+                //iOS8以降は許可をリクエストする関数をCallする
+                // TODO alwaysじゃないほうにする？
+                self.manager.requestAlwaysAuthorization()
+            }else{
+                self.manager.startMonitoringForRegion(self.region)
+            }
+        case .Restricted, .Denied:
+            //デバイスから拒否状態
+            println("Restricted")
+        }
+        
+        Parse.setApplicationId("ABDEhfXK7SlwFUKF8hwVyQ1SgkZRw1t9XsQ8H10I", clientKey: "wUOCa57Spig7MRGb4MEdH4VsKFInoltOsBu5b0fD")
+        
+        
         return true
     }
 
@@ -52,7 +92,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return urls[urls.count-1] as NSURL
     }()
 
-    lazy var managedObjectModel: NSManagedObjectModel = {
+    lazy var managedObjectModel: NSManagedObjectModel? = {
         // The managed object model for the application. This property is not optional. It is a fatal error for the application not to be able to find and load its model.
         let modelURL = NSBundle.mainBundle().URLForResource("BeaconReceiver", withExtension: "momd")!
         return NSManagedObjectModel(contentsOfURL: modelURL)
@@ -61,7 +101,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     lazy var persistentStoreCoordinator: NSPersistentStoreCoordinator? = {
         // The persistent store coordinator for the application. This implementation creates and return a coordinator, having added the store for the application to it. This property is optional since there are legitimate error conditions that could cause the creation of the store to fail.
         // Create the coordinator and store
-        var coordinator: NSPersistentStoreCoordinator? = NSPersistentStoreCoordinator(managedObjectModel: self.managedObjectModel)
+        var coordinator: NSPersistentStoreCoordinator? = NSPersistentStoreCoordinator(managedObjectModel: self.managedObjectModel!)
         let url = self.applicationDocumentsDirectory.URLByAppendingPathComponent("BeaconReceiver.sqlite")
         var error: NSError? = nil
         var failureReason = "There was an error creating or loading the application's saved data."
@@ -72,7 +112,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             dict[NSLocalizedDescriptionKey] = "Failed to initialize the application's saved data"
             dict[NSLocalizedFailureReasonErrorKey] = failureReason
             dict[NSUnderlyingErrorKey] = error
-            error = NSError.errorWithDomain("YOUR_ERROR_DOMAIN", code: 9999, userInfo: dict)
+            error = NSError(domain:"YOUR_ERROR_DOMAIN", code: 9999, userInfo: dict)
             // Replace this with code to handle the error appropriately.
             // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
             NSLog("Unresolved error \(error), \(error!.userInfo)")
@@ -92,7 +132,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         managedObjectContext.persistentStoreCoordinator = coordinator
         return managedObjectContext
     }()
-
+    
     // MARK: - Core Data Saving support
 
     func saveContext () {
@@ -106,6 +146,139 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
     }
+    
+    
+    //MARK: - Remote Notification
+    
+    func application(application: UIApplication, didRegisterUserNotificationSettings notificationSettings: UIUserNotificationSettings) {
+        println("registerusernotificationsetting")
+        application.registerForRemoteNotifications();
+    }
+    
+    func application(application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: NSData) {
+        println("registerforremotenotificationswithdevicetoken");
+        
+        var installation = PFInstallation.currentInstallation();
+        
+        println("installation id:%@",installation.installationId);
+        installation.setDeviceTokenFromData(deviceToken)
+        installation.saveEventually()
+    }
 
+    
+    // MARK: - Notification
+    func application(application: UIApplication, didReceiveLocalNotification notification: UILocalNotification) {
+        var alert = UIAlertView()
+        alert.title = "Message"
+        alert.message = notification.alertBody
+        alert.addButtonWithTitle(notification.alertAction!)
+        alert.show()
+    }
+    
+    func application(application: UIApplication, didReceiveRemoteNotification userInfo: [NSObject : AnyObject], fetchCompletionHandler completionHandler: (UIBackgroundFetchResult) -> Void) {
+        
+        println(userInfo);
+        
+        var req = PFObject(withoutDataWithClassName: "DakokuRequest", objectId: userInfo["objectId"] as String);
+        
+        req.fetchInBackgroundWithBlock { (object:PFObject!, error:NSError!) -> Void in
+            if ((error) != nil) {
+                completionHandler(UIBackgroundFetchResult.Failed);
+            }else {
+                self.html = object.objectForKey("html") as NSString
+                println("html ")
+                println(self.html)
+                self.showLocalNotification("dakoku reauest has been accepted.", withMessage: "Thanks!!!")
+                //TODO 起動時にはこのhtmlを画面に表示するようにしたい。
+                completionHandler(UIBackgroundFetchResult.NewData);
+            }
+        }
+    }
+    
+    // MARK: - CL
+    func locationManager(manager: CLLocationManager!, didEnterRegion region: CLRegion!) {
+        println("didEnter")
+        fire();
+    }
+    
+    func fire (){
+        var date = NSDate();
+        if(lastDate != nil){
+            if(NSCalendar.currentCalendar().compareDate(lastDate!, toDate: date, toUnitGranularity: NSCalendarUnit.CalendarUnitDay) == NSComparisonResult.OrderedAscending ){
+            }else{
+                println("already done for today");
+                return;
+            }
+        }
+        lastDate = date;
+        
+        var central = PFObject(className: "DakokuRequest")
+        
+        if(NSUserDefaults.standardUserDefaults().stringForKey("id_preference") == nil ||  NSUserDefaults.standardUserDefaults().stringForKey("password_preference") == nil){
+            showAlert("error", withMessage: "userid and password for login are required please go to Setting to setup", withButtonTitle: "OK")
+            return;
+        }
+        central["user_id"] = NSUserDefaults.standardUserDefaults().stringForKey("id_preference");
+        central["password"] = NSUserDefaults.standardUserDefaults().stringForKey("password_preference");
+        central["status"] = 0;
+        if(PFInstallation.currentInstallation().installationId == nil){
+            showAlert("warning", withMessage: "Could not set up push notification. You will not receive notification for dakoku result.", withButtonTitle: "OK")
+        }else{
+            central["installationId"] = PFInstallation.currentInstallation().installationId
+        }
+        
+        central.save()
+        
+        showLocalNotification("Good morning! I sent attendance request for you!", withMessage: "Thanks!")
+        
+    }
+    
+    func locationManager(manager: CLLocationManager!, didStartMonitoringForRegion region: CLRegion!) {
+        println("didStartMonitoring")
+        manager.requestStateForRegion(region);
+    }
+    
+    func locationManager(manager: CLLocationManager!, didDetermineState state: CLRegionState, forRegion region: CLRegion!) {
+        println("didDeterminStat",state.rawValue)
+        switch (state) {
+        case .Inside: // リージョン内にいる
+            fire();
+            break;
+        default:
+            break;
+        }
+    }
+    
+    func locationManager(manager: CLLocationManager!, didChangeAuthorizationStatus status: CLAuthorizationStatus) {
+        if(status == .NotDetermined) {
+        } else if(status == .Authorized) {
+            manager.startMonitoringForRegion(region)
+        } else if(status == .AuthorizedWhenInUse) {
+            manager.startMonitoringForRegion(region)
+        }
+    }
+    
+    //MARK -util
+    
+    func showAlert(title: NSString, withMessage message : NSString, withButtonTitle buttonTitle : NSString){
+        var alert = UIAlertView()
+        alert.title = title
+        alert.message = message
+        alert.addButtonWithTitle(buttonTitle)
+        alert.show()
+    }
+    
+    
+    func showLocalNotification(alertBody: NSString, withMessage alertAction : NSString){
+        
+        var notification = UILocalNotification()
+        notification.fireDate = NSDate()	// すぐに通知したいので現在時刻を取得
+        notification.timeZone = NSTimeZone.defaultTimeZone()
+        notification.alertBody = alertBody
+        notification.alertAction = alertAction
+        notification.soundName = UILocalNotificationDefaultSoundName
+        UIApplication.sharedApplication().presentLocalNotificationNow(notification)
+    
+    }
 }
 
