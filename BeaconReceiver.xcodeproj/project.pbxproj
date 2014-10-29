@@ -15,6 +15,8 @@
 		733AD62319F92A85004E521A /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 733AD62119F92A85004E521A /* LaunchScreen.xib */; };
 		733AD62F19F92A86004E521A /* BeaconReceiverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 733AD62E19F92A86004E521A /* BeaconReceiverTests.swift */; };
 		733AD63919F92ACC004E521A /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 733AD63819F92ACC004E521A /* CoreLocation.framework */; };
+		739FA96019FCCE020037F9E7 /* Logs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 739FA95F19FCCE020037F9E7 /* Logs.swift */; };
+		73BD499719FCB72900120044 /* LogTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73BD499619FCB72900120044 /* LogTableViewController.swift */; };
 		73CB215C19F9E31B004ED9F9 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73CB215B19F9E31B004ED9F9 /* CloudKit.framework */; };
 		73CB215E19F9E96C004ED9F9 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 73CB215D19F9E96B004ED9F9 /* Settings.bundle */; };
 		73CB216219F9EC96004ED9F9 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73CB216119F9EC96004ED9F9 /* AudioToolbox.framework */; };
@@ -28,6 +30,7 @@
 		73CB217519F9EE4D004ED9F9 /* ParseImport.m in Sources */ = {isa = PBXBuildFile; fileRef = 73CB217419F9EE4D004ED9F9 /* ParseImport.m */; };
 		73CB217719F9F17F004ED9F9 /* Parse.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73CB217619F9F17F004ED9F9 /* Parse.framework */; };
 		73CB217919F9F34B004ED9F9 /* Bolts.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73CB217819F9F34B004ED9F9 /* Bolts.framework */; };
+		73D7F19019FF1DE400AD21EC /* TDBadgedCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 73D7F18F19FF1DE400AD21EC /* TDBadgedCell.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,6 +56,8 @@
 		733AD62D19F92A86004E521A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		733AD62E19F92A86004E521A /* BeaconReceiverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeaconReceiverTests.swift; sourceTree = "<group>"; };
 		733AD63819F92ACC004E521A /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
+		739FA95F19FCCE020037F9E7 /* Logs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Logs.swift; sourceTree = "<group>"; };
+		73BD499619FCB72900120044 /* LogTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LogTableViewController.swift; sourceTree = "<group>"; };
 		73CB215A19F9E310004ED9F9 /* BeaconReceiver.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = BeaconReceiver.entitlements; sourceTree = "<group>"; };
 		73CB215B19F9E31B004ED9F9 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		73CB215D19F9E96B004ED9F9 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
@@ -68,6 +73,8 @@
 		73CB217419F9EE4D004ED9F9 /* ParseImport.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ParseImport.m; sourceTree = "<group>"; };
 		73CB217619F9F17F004ED9F9 /* Parse.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Parse.framework; sourceTree = "<group>"; };
 		73CB217819F9F34B004ED9F9 /* Bolts.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Bolts.framework; sourceTree = "<group>"; };
+		73D7F18E19FF1DE400AD21EC /* TDBadgedCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TDBadgedCell.h; path = ../TDBadgedCell.h; sourceTree = "<group>"; };
+		73D7F18F19FF1DE400AD21EC /* TDBadgedCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TDBadgedCell.m; path = ../TDBadgedCell.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,6 +141,8 @@
 		733AD61219F92A81004E521A /* BeaconReceiver */ = {
 			isa = PBXGroup;
 			children = (
+				73D7F18E19FF1DE400AD21EC /* TDBadgedCell.h */,
+				73D7F18F19FF1DE400AD21EC /* TDBadgedCell.m */,
 				73CB215A19F9E310004ED9F9 /* BeaconReceiver.entitlements */,
 				733AD61519F92A82004E521A /* AppDelegate.swift */,
 				733AD61A19F92A83004E521A /* ViewController.swift */,
@@ -141,9 +150,11 @@
 				733AD61F19F92A84004E521A /* Images.xcassets */,
 				733AD62119F92A85004E521A /* LaunchScreen.xib */,
 				733AD61719F92A83004E521A /* BeaconReceiver.xcdatamodeld */,
+				739FA95F19FCCE020037F9E7 /* Logs.swift */,
 				733AD61319F92A81004E521A /* Supporting Files */,
 				73CB217419F9EE4D004ED9F9 /* ParseImport.m */,
 				73CB217319F9EE4C004ED9F9 /* BeaconReceiver-Bridging-Header.h */,
+				73BD499619FCB72900120044 /* LogTableViewController.swift */,
 			);
 			path = BeaconReceiver;
 			sourceTree = "<group>";
@@ -286,8 +297,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				739FA96019FCCE020037F9E7 /* Logs.swift in Sources */,
 				733AD61B19F92A83004E521A /* ViewController.swift in Sources */,
+				73D7F19019FF1DE400AD21EC /* TDBadgedCell.m in Sources */,
 				733AD61919F92A83004E521A /* BeaconReceiver.xcdatamodeld in Sources */,
+				73BD499719FCB72900120044 /* LogTableViewController.swift in Sources */,
 				73CB217519F9EE4D004ED9F9 /* ParseImport.m in Sources */,
 				733AD61619F92A82004E521A /* AppDelegate.swift in Sources */,
 			);

@@ -10,15 +10,17 @@ import UIKit
 import CoreData
 import CoreLocation
 
+
+let newHtmlNotification = "tz.BaconReceiver.newHtmlNotification"
+
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate {
 
     var window: UIWindow?
     let proximityUUID = NSUUID(UUIDString:"00000000-8414-1001-B000-001C4DFB787A")
+
     var region  = CLBeaconRegion()
     var manager = CLLocationManager()
-    var lastDate : NSDate?
-    var html = NSString()
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
@@ -37,10 +39,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate 
         switch CLLocationManager.authorizationStatus() {
         case .Authorized, .AuthorizedWhenInUse:
             //iBeaconによる領域観測を開始する
-            println("観測開始")
+            println("start monitoring")
             manager.startMonitoringForRegion(self.region)
         case .NotDetermined:
-            println("許可承認")
+            println("request authorization")
             //デバイスに許可を促す
             if(self.manager.respondsToSelector("requestAlwaysAuthorization")){
                 //iOS8以降は許可をリクエストする関数をCallする
@@ -71,6 +73,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate 
     }
 
     func applicationWillEnterForeground(application: UIApplication) {
+        manager.requestStateForRegion(region);
         // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
     }
 
@@ -183,13 +186,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate 
         
         req.fetchInBackgroundWithBlock { (object:PFObject!, error:NSError!) -> Void in
             if ((error) != nil) {
+                self.showLocalNotification("I'm sorry, I could not make sure if Dakoku request successfully sent. Please do DAKOKU manually in case.", withMessage: "OK")
+                
                 completionHandler(UIBackgroundFetchResult.Failed);
             }else {
-                self.html = object.objectForKey("html") as NSString
-                println("html ")
-                println(self.html)
-                self.showLocalNotification("dakoku reauest has been accepted.", withMessage: "Thanks!!!")
-                //TODO 起動時にはこのhtmlを画面に表示するようにしたい。
+                
+                let log = NSEntityDescription.insertNewObjectForEntityForName("Logs", inManagedObjectContext: self.managedObjectContext!) as Logs
+                log.date = NSDate()
+                log.html = object.objectForKey("html") as NSString!
+                log.status = userInfo["status"] as Int
+                let file = object.objectForKey("data") as PFFile
+                
+                log.data = file.getData();
+                
+                self.managedObjectContext!.save(nil);
+                
+//                self.postNewHtmlNotification();
+                if(userInfo["status"] as Int == 2){
+                    self.showLocalNotification("Good morning! I sent Dakoku reauest for you! ", withMessage: "Thanks!!!")
+                }else{
+                    self.showLocalNotification("I'm sorry. I think I could not successfully sent Dakoku reauest. Please do DAKOKU manually. ", withMessage: "OK")
+                }
                 completionHandler(UIBackgroundFetchResult.NewData);
             }
         }
@@ -203,34 +220,41 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate 
     
     func fire (){
         var date = NSDate();
+        var lastDate = NSUserDefaults.standardUserDefaults().objectForKey("last_date") as NSDate?
         if(lastDate != nil){
             if(NSCalendar.currentCalendar().compareDate(lastDate!, toDate: date, toUnitGranularity: NSCalendarUnit.CalendarUnitDay) == NSComparisonResult.OrderedAscending ){
             }else{
-                println("already done for today");
+                println("already sent request today");
                 return;
             }
         }
-        lastDate = date;
-        
         var central = PFObject(className: "DakokuRequest")
         
         if(NSUserDefaults.standardUserDefaults().stringForKey("id_preference") == nil ||  NSUserDefaults.standardUserDefaults().stringForKey("password_preference") == nil){
-            showAlert("error", withMessage: "userid and password for login are required please go to Setting to setup", withButtonTitle: "OK")
+            showAlert("Please set up.", withMessage: "userid and password for login are required please go to Setting to setup", withButtonTitle: "OK")
             return;
         }
         central["user_id"] = NSUserDefaults.standardUserDefaults().stringForKey("id_preference");
-        central["password"] = NSUserDefaults.standardUserDefaults().stringForKey("password_preference");
+        
+        let str = NSUserDefaults.standardUserDefaults().stringForKey("password_preference");
+        let data = str!.dataUsingEncoding(NSUTF8StringEncoding)
+        let base64Str = data!.base64EncodedStringWithOptions(nil)
+//        central["password"] = NSUserDefaults.standardUserDefaults().stringForKey("password_preference");
+        central["password"] = base64Str;
         central["status"] = 0;
         if(PFInstallation.currentInstallation().installationId == nil){
-            showAlert("warning", withMessage: "Could not set up push notification. You will not receive notification for dakoku result.", withButtonTitle: "OK")
+            showAlert("warning", withMessage: "Could not set up push notification. You will not receive notification for Dakoku result.", withButtonTitle: "OK")
         }else{
             central["installationId"] = PFInstallation.currentInstallation().installationId
         }
         
         central.save()
         
-        showLocalNotification("Good morning! I sent attendance request for you!", withMessage: "Thanks!")
+//        showLocalNotification("Good morning! I sent attendance request for you! ", withMessage: "OK!")
         
+        NSUserDefaults.standardUserDefaults().setObject(NSDate(), forKey: "last_date");
+        NSUserDefaults.standardUserDefaults().synchronize();
+
     }
     
     func locationManager(manager: CLLocationManager!, didStartMonitoringForRegion region: CLRegion!) {
@@ -278,7 +302,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate 
         notification.alertAction = alertAction
         notification.soundName = UILocalNotificationDefaultSoundName
         UIApplication.sharedApplication().presentLocalNotificationNow(notification)
+    }
     
+    func postNewHtmlNotification(){
+//        NSNotificationCenter.defaultCenter().postNotificationName(newHtmlNotification, object: nil, userInfo: ["html":html])
     }
 }
 
